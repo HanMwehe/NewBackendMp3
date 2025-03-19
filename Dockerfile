@@ -4,6 +4,8 @@ FROM node:20
 WORKDIR /app
 
 # Install pnpm globally
+
+RUN apt-get update && apt-get install -y yt-dlp ffmpeg
 RUN npm install -g pnpm
 
 # Copy package.json and pnpm-lock.yaml
