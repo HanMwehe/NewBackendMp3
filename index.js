@@ -11,7 +11,10 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Konversi MP3
+// Path lengkap untuk yt-dlp jika diperlukan
+const ytDlpPath = "/usr/bin/yt-dlp"; // Ganti dengan path lengkap jika perlu
+
+// Konversi MP3 (Get Video Info)
 app.post("/get-info", async (req, res) => {
   const { videoUrl } = req.body;
 
@@ -20,8 +23,8 @@ app.post("/get-info", async (req, res) => {
   }
 
   try {
-    // Spawn yt-dlp directly to get the title
-    const ytdlpProc = spawn("yt-dlp", ["--get-title", videoUrl]);
+    // Spawn yt-dlp langsung untuk mendapatkan judul
+    const ytdlpProc = spawn(ytDlpPath, ["--get-title", videoUrl]);
 
     let title = "";
 
@@ -45,7 +48,7 @@ app.post("/get-info", async (req, res) => {
   }
 });
 
-// Download endpoint
+// Endpoint untuk Download (Konversi dan Unduh MP3)
 app.get("/download", async (req, res) => {
   const { videoUrl } = req.query;
 
@@ -54,8 +57,8 @@ app.get("/download", async (req, res) => {
   }
 
   try {
-    // Get video title
-    const ytdlpProc = spawn("yt-dlp", ["--get-title", videoUrl]);
+    // Dapatkan judul video
+    const ytdlpProc = spawn(ytDlpPath, ["--get-title", videoUrl]);
 
     let title = "";
 
@@ -72,14 +75,14 @@ app.get("/download", async (req, res) => {
         return res.status(500).json({ message: "Failed to get video info" });
       }
 
-      const sanitizedTitle = title.replace(/[<>:"/\\|?*]/g, "");
+      const sanitizedTitle = title.replace(/[<>:"/\\|?*]/g, ""); // Sanitasi judul
       const fileName = `${sanitizedTitle}_${Date.now()}.mp3`;
 
       res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
       res.setHeader("Content-Type", "audio/mpeg");
 
-      // yt-dlp download audio (webm/m4a) -> pipe ke ffmpeg untuk konversi ke mp3
-      const ytdlpAudioProc = spawn("yt-dlp", [
+      // Spawn yt-dlp untuk download audio dan kemudian pipe ke ffmpeg untuk konversi ke mp3
+      const ytdlpAudioProc = spawn(ytDlpPath, [
         "-f",
         "bestaudio",
         "-o",
